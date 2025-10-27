@@ -217,17 +217,6 @@ def main() -> None:
     agent_cfg["action_dim"] = action_dim
     agent = make_agent(agent_cfg, state_dim, action_dim, device, action_limit)
 
-    checkpoint_cfg = config.get("checkpoint", {})
-    checkpoint_dir = os.path.join(logger.output_dir, "checkpoints")
-    os.makedirs(checkpoint_dir, exist_ok=True)
-    keep_latest = int(checkpoint_cfg.get("keep_latest", 5))
-    resume_path = args.resume or checkpoint_cfg.get("resume_path")
-    if resume_path:
-        agent.load(resume_path)
-        norm_file = Path(resume_path).with_name(Path(resume_path).stem + "_normalizer.npz")
-        if norm_file.exists():
-            load_normalizer_state(normalizer, norm_file)
-
     logger_cfg = config.get("logging", {})
     output_dir = logger_cfg.get("output_dir", "experiments")
     run_name = logger_cfg.get("run_name", f"panda_door_seed{seed}")
@@ -239,6 +228,17 @@ def main() -> None:
         wandb_cfg=logger_cfg.get("wandb"),
         config_dump=config,
     )
+
+    checkpoint_cfg = config.get("checkpoint", {})
+    checkpoint_dir = os.path.join(logger.output_dir, "checkpoints")
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    keep_latest = int(checkpoint_cfg.get("keep_latest", 5))
+    resume_path = args.resume or checkpoint_cfg.get("resume_path")
+    if resume_path:
+        agent.load(resume_path)
+        norm_file = Path(resume_path).with_name(Path(resume_path).stem + "_normalizer.npz")
+        if norm_file.exists():
+            load_normalizer_state(normalizer, norm_file)
 
     exploration_cfg = config.get("exploration", {})
     noise_scheduler = LinearNoiseScheduler(

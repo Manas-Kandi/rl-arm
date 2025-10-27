@@ -1,0 +1,96 @@
+{
+  "seed": 0,
+  "env": {
+    "name": "PandaDoor",
+    "task": "Door",
+    "robots": "Panda",
+    "has_renderer": false,
+    "use_camera_obs": false,
+    "horizon": 300,
+    "randomize": true,
+    "randomization": {
+      "mass_scale": [
+        0.9,
+        1.1
+      ],
+      "friction_scale": [
+        0.8,
+        1.2
+      ],
+      "visual_randomization": true,
+      "joint_damping_scale": [
+        0.9,
+        1.1
+      ]
+    },
+    "observation_noise": {
+      "enabled": true,
+      "std": 0.01
+    },
+    "action_delay": {
+      "enabled": false,
+      "delay_steps": 1
+    }
+  },
+  "agent": {
+    "type": "ddpg",
+    "state_dim": 32,
+    "action_dim": 8,
+    "actor_hidden": [
+      256,
+      128
+    ],
+    "critic_hidden": [
+      256,
+      128
+    ],
+    "actor_lr": 0.0001,
+    "critic_lr": 0.001,
+    "weight_decay": 1e-05,
+    "gamma": 0.99,
+    "tau": 0.005,
+    "use_twin_critics": true,
+    "target_noise": {
+      "enabled": true,
+      "std": 0.2,
+      "clip": 0.5
+    },
+    "policy_update_delay": 2,
+    "gradient_clip_norm": 1.0
+  },
+  "replay": {
+    "size": 1000000,
+    "batch_size": 256,
+    "warmup_steps": 10000,
+    "n_updates_per_step": 1
+  },
+  "exploration": {
+    "noise_std_init": 0.3,
+    "noise_std_final": 0.05,
+    "noise_decay_steps": 300000,
+    "action_smoothing_coef": 0.1
+  },
+  "training": {
+    "total_env_steps": 5000000,
+    "max_episode_steps": 300,
+    "eval_every_steps": 50000,
+    "save_every_steps": 50000,
+    "log_every_steps": 1000,
+    "num_eval_episodes": 10
+  },
+  "logging": {
+    "output_dir": "experiments",
+    "run_name": "panda_door_ddpg_seed0",
+    "tensorboard_dir": "runs",
+    "wandb": {
+      "enabled": false,
+      "project": "panda-door-rl",
+      "entity": null,
+      "group": null
+    }
+  },
+  "checkpoint": {
+    "resume_path": null,
+    "keep_latest": 5
+  }
+}
