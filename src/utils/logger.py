@@ -2,7 +2,7 @@ import json
 import logging
 import os
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Protocol
 
 try:
     from torch.utils.tensorboard import SummaryWriter
@@ -15,6 +15,11 @@ except ImportError:  # pragma: no cover - wandb optional dependency
     wandb = None  # type: ignore
 
 
+class MetricsSink(Protocol):
+    def write_scalars(self, step: int, scalars: Dict[str, float]) -> None:
+        ...
+
+
 class TrainLogger:
     """Handles TensorBoard and optional Weights & Biases logging."""
 
@@ -25,11 +30,13 @@ class TrainLogger:
         tensorboard_dir: Optional[str] = None,
         wandb_cfg: Optional[Dict[str, Any]] = None,
         config_dump: Optional[Dict[str, Any]] = None,
+        structured_writer: Optional[MetricsSink] = None,
     ) -> None:
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         self.run_id = f"{run_name}-{timestamp}"
         self.output_dir = os.path.join(base_dir, self.run_id)
         os.makedirs(self.output_dir, exist_ok=True)
+        self.structured_writer = structured_writer
 
         tb_dir = tensorboard_dir or os.path.join(self.output_dir, "tb")
         if SummaryWriter is None:
@@ -63,10 +70,20 @@ class TrainLogger:
             self.tb_writer.add_scalar(tag, value, step)
         if self.wandb_run is not None:
             wandb.log({tag: value, "global_step": step}, step=step)
+        if self.structured_writer is not None:
+            self.structured_writer.write_scalars(step, {tag: float(value)})
 
     def log_scalars(self, prefix: str, metrics: Dict[str, float], step: int) -> None:
+        payload: Dict[str, float] = {}
         for key, val in metrics.items():
-            self.log_scalar(f"{prefix}/{key}", float(val), step)
+            tag = f"{prefix}/{key}"
+            payload[tag] = float(val)
+            if self.tb_writer is not None:
+                self.tb_writer.add_scalar(tag, float(val), step)
+            if self.wandb_run is not None:
+                wandb.log({tag: float(val), "global_step": step}, step=step)
+        if self.structured_writer is not None and payload:
+            self.structured_writer.write_scalars(step, payload)
 
     def log_histogram(self, tag: str, values, step: int) -> None:
         if self.tb_writer is not None:
@@ -89,3 +106,6 @@ class TrainLogger:
             self.tb_writer.close()
         if self.wandb_run is not None:
             wandb.finish()
+
+    def set_structured_writer(self, writer: Optional[MetricsSink]) -> None:
+        self.structured_writer = writer

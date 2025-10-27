@@ -82,6 +82,33 @@ python src/eval.py --config configs/train_panda_door.yaml \
 
 Render the environment (requires proper display setup) by adding `--render`.
 
+## Monitoring API
+
+The repository ships with a lightweight FastAPI backend and React-ready JSONL metrics feed. To run the API locally:
+
+```bash
+source .venv/bin/activate
+pip install -r requirements-api.txt
+uvicorn src.api.server:app --reload
+```
+
+Metrics streamed by the trainer are appended to `experiments/<run>/metrics.jsonl`. TensorBoard data is still written under `runs/`, so you can use either interface during development.
+
+## React Dashboard
+
+A Vite + React frontend lives under `frontend/` for real-time monitoring.
+
+```bash
+cd frontend
+npm install
+npm run dev  # opens http://localhost:3000 with proxy to the API
+
+# production build
+npm run build
+```
+
+After running `npm run build`, the FastAPI server automatically serves the static assets from `frontend/dist`, so deploying Uvicorn will host both the API and the dashboard.
+
 ## Sim-to-Real Checklist (Summary)
 
 - Train robust policies in simulation with domain randomization.

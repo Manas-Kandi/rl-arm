@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 import time
 from copy import deepcopy
-from typing import Dict, Tuple
+from typing import Dict
 from pathlib import Path
 
 import numpy as np
@@ -228,6 +229,25 @@ def main() -> None:
         wandb_cfg=logger_cfg.get("wandb"),
         config_dump=config,
     )
+
+    api_cfg = logger_cfg.get("api", {})
+    if api_cfg.get("enabled", False):
+        try:
+            from src.utils.api_logger import APIMetricsWriter
+        except Exception as exc:  # pragma: no cover - optional dependency path
+            logging.warning("API metrics logging disabled: %s", exc)
+        else:
+            metrics_path = api_cfg.get("path")
+            if metrics_path:
+                metrics_path = Path(metrics_path)
+            else:
+                metrics_path = Path(logger.output_dir) / "metrics.jsonl"
+            api_writer = APIMetricsWriter(
+                metrics_path,
+                run_id=logger.run_id,
+                max_history=int(api_cfg.get("max_history", 10_000)),
+            )
+            logger.set_structured_writer(api_writer)
 
     checkpoint_cfg = config.get("checkpoint", {})
     checkpoint_dir = os.path.join(logger.output_dir, "checkpoints")

@@ -62,6 +62,10 @@ logging:
     project: panda-door-rl
     entity: null
     group: null
+  api:
+    enabled: false
+    path: experiments/metrics.jsonl
+    max_history: 10000
 checkpoint:
   resume_path: null
   keep_latest: 5
