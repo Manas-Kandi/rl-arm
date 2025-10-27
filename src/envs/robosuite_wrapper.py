@@ -95,7 +95,11 @@ class RobosuiteWrapper:
         obs_vec = self._process_obs(obs)
         info = self._augment_info(info, obs)
         if done:
-            info["episode"] = self.env.episode_steps
+            episode_steps = getattr(self.env, "episode_steps", None)
+            if episode_steps is None:
+                episode_steps = getattr(self.env, "_episode_steps", None)
+            if episode_steps is not None:
+                info["episode_steps"] = int(episode_steps)
         self.prev_action = action
         return obs_vec, float(reward), bool(done), info
 
